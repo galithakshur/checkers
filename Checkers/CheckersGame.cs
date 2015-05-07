@@ -17,6 +17,7 @@ namespace Checkers
             }
         }
         public Player CurrentPlayer { get; set; }
+        public Move LastMove { get; set; }
         public void Start()
         {
             Console.CursorVisible = false;
@@ -31,7 +32,7 @@ namespace Checkers
             RegisterPlayers();
             MoveSelector(new Point(0, 0));
             //MakeAKing();
-            PlayReverseEating();
+            //PlayReverseEating();
             while (true)  // there are pieces on board
             {
                 ConsoleKeyInfo keyInfo = Console.ReadKey(true);
@@ -47,9 +48,9 @@ namespace Checkers
                     ToggleSelection();
                 else if (keyInfo.Key == ConsoleKey.Escape)
                 {
-                    if (CurrentPlayer.IsEating)
+                    if (LastMove != null && LastMove.IsEating)
                     {
-                        CurrentPlayer.IsEating = false;
+                        LastMove = null;
                         ChangeTurn();
                     }
                     else
@@ -62,48 +63,27 @@ namespace Checkers
             //Console.ReadLine();
         }
 
-        private void PlayReverseEating()
-        {
-            MovePiece(Board.Pieces[8], new Point(1, 3));
-            CurrentPlayer = Board.PlayerO;
-            MovePiece(Board.Pieces[15], new Point(6, 4));
-            CurrentPlayer = Board.PlayerX;
-            MovePiece(Board.Pieces[8], new Point(2, 4));
-            CurrentPlayer = Board.PlayerO;
-            MovePiece(Board.Pieces[9], new Point(3, 3));
-            CurrentPlayer = Board.PlayerX;
-            MovePiece(Board.Pieces[15], new Point(7, 3));
-            CurrentPlayer = Board.PlayerO;
-            MovePiece(Board.Pieces[9], new Point(4, 4));
-            CurrentPlayer = Board.PlayerX;
-            MovePiece(Board.Pieces[4], new Point(0, 2));
-            CurrentPlayer = Board.PlayerO;
-            MovePiece(Board.Pieces[14], new Point(6, 4));
-            CurrentPlayer = Board.PlayerX;
-            MovePiece(Board.Pieces[4], new Point(1, 3));
-            CurrentPlayer = Board.PlayerO;
-        }
-        private void MakeAKing()
-        {
-            MovePiece(Board.Pieces[8], new Point(1, 3));
-            MovePiece(Board.Pieces[12], new Point(2, 4));
-            MovePiece(Board.Pieces[9], new Point(3, 3));
-            MovePiece(Board.Pieces[12], new Point(0, 2));
-            MovePiece(Board.Pieces[10], new Point(5, 3));
-            MovePiece(Board.Pieces[13], new Point(4, 4));
-            MovePiece(Board.Pieces[5], new Point(4, 2));
-            MovePiece(Board.Pieces[13], new Point(2, 2));
-            MovePiece(Board.Pieces[1], new Point(3, 1));
-            MovePiece(Board.Pieces[12], new Point(2, 0));
-        }
+        //private void MakeAKing()
+        //{
+        //    MovePiece(Board.Pieces[8], new Point(1, 3));
+        //    MovePiece(Board.Pieces[12], new Point(2, 4));
+        //    MovePiece(Board.Pieces[9], new Point(3, 3));
+        //    MovePiece(Board.Pieces[12], new Point(0, 2));
+        //    MovePiece(Board.Pieces[10], new Point(5, 3));
+        //    MovePiece(Board.Pieces[13], new Point(4, 4));
+        //    MovePiece(Board.Pieces[5], new Point(4, 2));
+        //    MovePiece(Board.Pieces[13], new Point(2, 2));
+        //    MovePiece(Board.Pieces[1], new Point(3, 1));
+        //    MovePiece(Board.Pieces[12], new Point(2, 0));
+        //}
         public void RegisterPlayers()
         {
             Console.SetCursorPosition(0, 18);
             Console.WriteLine("WELCOME TO CHEKERS");
             Console.WriteLine("PLAYER X - please enter your name");
-            Board.PlayerX.Name = Console.ReadLine();
+            Board.PlayerX.Name = "ggg"; // Console.ReadLine();
             Console.WriteLine("PLAYER O - please enter your name");
-            Board.PlayerO.Name = Console.ReadLine();
+            Board.PlayerO.Name = "yyy";// Console.ReadLine();
             ///
             DeleteLines(5);
             Console.WriteLine("{0} - GO AHEAD!", Board.PlayerX.Name);
@@ -125,21 +105,30 @@ namespace Checkers
                 // make sure a sign is left on selected piece
                 //var Color = ConsoleColor.Yellow;
                 //Draw(CurrentPlayer.Display , SelectorPosition, Color);
-                SelectedPiece = GetPiece(SelectorPosition);
+                var piece = GetPiece(SelectorPosition);
+                if (piece == null)
+                    return;
+                if (piece.Display != CurrentPlayer.Display)
+                {
+                    Error();
+                    return;
+                }
+                SelectedPiece = piece;
                 DrawCell(SelectorPosition);
             }
             else
             {
                 var piece = SelectedPiece;
+                var move = CreateMove(piece, SelectorPosition);
                 if (piece.Position.Equals(SelectorPosition))
                 {
                     SelectedPiece = null;
                     DrawCell(SelectorPosition);
                 }
-                else if (CheckLegalMoveAndErrorIfNeeded(piece, SelectorPosition))
+                else if (CheckLegalMoveAndErrorIfNeeded(move))
                 {
                     SelectedPiece = null;
-                    MovePiece(piece, SelectorPosition);
+                    MakeMove(move);
                     // change turn to other player (on Board/here.CurrentPlayer)?
                     ChangeTurn();
                 }
@@ -150,31 +139,44 @@ namespace Checkers
                 }
             }
         }
+
+        private Move CreateMove(Piece piece, Point newPos)
+        {
+            var move = new Move { Piece = piece, From = piece.Position, To = newPos };
+            move.IsEating = IsEating(move);
+            move.IsEatingForward = IsEatingForward(move);
+            move.IsEatingBackward = IsEatingBackward(move);
+            move.IsTurningIntoKing = IsTurningIntoKing(move);
+            move.IsLegal = IsLegal(move);
+            return move;
+        }
+
+        bool CanMoveAgain()
+        {
+            if (LastMove == null)
+                return false; //you still haven't moved even once!
+
+            if (!LastMove.IsEatingForward)
+                return false; //you can't move again without eating first
+            var moves = GetAvailableMoves(LastMove.Piece);
+            var canMoveAgain = moves.Where(t => t.IsEating).FirstOrDefault() != null;
+            return canMoveAgain;
+        }
+
         /// 
         private void ChangeTurn()
         {
-            //if (GetAvailableMoves())
-            //    return;
-            // Point selectorPos;
-            if (!CurrentPlayer.IsEating)
-            {
-                if (CurrentPlayer == Board.PlayerX)// && !CurrentPlayer.IsEating)
-                {
-                    CurrentPlayer = Board.PlayerO;
-                    // selectorPos = new Point(0, 5);
-                }
-                else
-                {
-                    CurrentPlayer = Board.PlayerX;
-                    //selectorPos = new Point(0, 0);
-                }
+            if (CanMoveAgain())
+                return;
 
-            }
+            if (CurrentPlayer == Board.PlayerX)
+                CurrentPlayer = Board.PlayerO;
+            else
+                CurrentPlayer = Board.PlayerX;
 
             DeleteLines(1);
             Console.WriteLine("{0} - your turn", CurrentPlayer.Name);
-            //MoveSelector(selectorPos);
-
+            LastMove = null;
         }
         private void Error()
         {
@@ -210,9 +212,23 @@ namespace Checkers
 
 
         }
-        public void MovePiece(Piece piece, Point newPos)
+
+
+        public bool IsTurningIntoKing(Move move)
         {
-            if (!CheckLegalMoveAndErrorIfNeeded(piece, newPos))
+            var piece = move.Piece;
+            var newPos = move.To;
+            if ((piece.Display == "X" && newPos.Y == 7) || (piece.Display == "O" && newPos.Y == 0))
+                return true;
+            return false;
+
+        }
+        public void MakeMove(Move move)
+        {
+            var piece = move.Piece;
+            var newPos = move.To;
+
+            if (!CheckLegalMoveAndErrorIfNeeded(CreateMove(piece, newPos)))
                 throw new Exception("Illegal Move");
             //ISKING
             if ((piece.Display == "X" && newPos.Y == 7) || (piece.Display == "O" && newPos.Y == 0))
@@ -223,7 +239,7 @@ namespace Checkers
                 piece.Display += piece.Display;
             }
             //Eating..
-            if (IsEatingPossible(piece, newPos))
+            if (move.IsEatingForward)
             {
                 var midPiece = GetMidPiece(piece, newPos);
                 var midCell = midPiece.Position;
@@ -238,6 +254,8 @@ namespace Checkers
             // DrawCell(oldPos);
             DrawCell2(oldPos, piece.IsKing);
             DrawCell(piece.Position);
+
+            LastMove = move;
         }
         public Piece GetMidPiece(Piece piece, Point newPos)
         {
@@ -279,81 +297,99 @@ namespace Checkers
         {
             return GetPiece(pos) != null;
         }
-        public bool CheckLegalMoveAndErrorIfNeeded(Piece piece, Point newPos)
+        public bool CheckLegalMoveAndErrorIfNeeded(Move move)
         {
-            var legal = IsMoveLegal(piece, newPos);
+            var legal = move.IsLegal;
             if (!legal)
                 Error();
             return legal;
         }
 
-        bool IsMoveLegal(Piece piece, Point newPos)
+
+        bool IsLegal(Move move)
         {
+            var piece = move.Piece;
+            var newPos = move.To;
             var px = piece.Position.X;
             var py = piece.Position.Y;
             if (IsCellOccupied(newPos))
                 return false;
-            if (IsEatingPossible(piece, newPos))
+            if (move.IsEatingForward)
                 return true;
+            if (move.IsEatingBackward)
+            {
+                if (move.Piece.IsKing)
+                    return true;
+                if (LastMove != null && LastMove.IsEating)
+                    return true;
+                return false;
+            }
             var legalY = piece.Display == "X" ? py + 1 : py - 1;
             // go forward left or forward right, or eat
             //
             if ((px - 1 == newPos.X || px + 1 == newPos.X) && (legalY == newPos.Y || piece.IsKing))
                 return true;
-
-
             return false;
-
-            //var availableMoves = GetAvailableMoves();
-            //if (availableMoves.Contains(newPos))
-            //    return true;
-            //return false;
         }
 
-        //public List<Point> GetAvailableMoves()
-        //{
-        //    var piece = GetPiece(SelectorPosition);
-        //    int x = piece.Position.X;
-        //    int y = piece.Position.Y;
-        //    var legalY = piece.Display == "X" ? 1 : -1;
-
-        //    var possiblePositions = new List<Point>{
-        //         new Point(x+1,y+legalY),
-        //        new Point(x-1,y+legalY),
-
-        //        //new Point(x-2,y-2),
-        //        //new Point(x-1,y-2),
-        //        //new Point(x-2,y-2),
-        //        //new Point(x-2,y-2),
-        //    };
-        //    var AvailablePositions = new List<Point>();
-        //    foreach (var p in possiblePositions)
-        //    {
-        //        if (!IsCellOccupied(p))
-        //            AvailablePositions.Add(p);
-        //    }
-        //    return AvailablePositions;
-        //}
-
-        /// maybe this method should be on board
-
-        public bool IsEatingPossible(Piece piece, Point newPos)  // get pieces to global
+        public List<Move> GetAvailableMoves(Piece piece)
         {
+            int x = piece.Position.X;
+            int y = piece.Position.Y;
+            //var yDir = piece.Player.YDirection;
+
+            var possiblePositions = new List<Point>
+            {
+                new Point(x+1, y+1),
+                new Point(x+1, y-1),
+                
+                new Point(x-1, y+1),
+                new Point(x-1, y-1),
+                
+                new Point(x+2, y+2),
+                new Point(x+2, y-2),
+                
+                new Point(x-2, y+2),
+                new Point(x-2, y-2),
+            };
+            var moves = new List<Move>();
+            foreach (var p in possiblePositions)
+            {
+                if (!IsCellOccupied(p))
+                    moves.Add(CreateMove(piece, p));
+            }
+            return moves;
+        }
+
+        public bool IsEating(Move move)
+        {
+            var piece = move.Piece;
+            var newPos = move.To;
             var px = piece.Position.X;
             var py = piece.Position.Y;
-            var offset = piece.Display == "X" ? 2 : -2;
+            var offsetY = piece.Player.YDirection * 2;
 
-            if ((px - 2 == newPos.X || px + 2 == newPos.X) && (py + offset == newPos.Y || piece.IsKing))
+            if ((px - 2 == newPos.X || px + 2 == newPos.X) && (py + 2 == newPos.Y || py - 2 == newPos.Y))
             {
                 var midPiece = GetMidPiece(piece, newPos);
                 if (midPiece != null && midPiece.Display != piece.Display)
-                    CurrentPlayer.IsEating = true;
-                return true;
+                    return true;
             }
-            //eating backwards
-            if (CurrentPlayer.IsEating && (px - 2 == newPos.X || px + 2 == newPos.X) && (py - 2 == newPos.Y || py + 2 == newPos.X))
-                return true;
             return false;
+        }
+
+        public bool IsEatingForward(Move move)
+        {
+            if (!move.IsEating)
+                return false;
+            if (move.Piece.Player.YDirection == 1)
+                return move.From.Y < move.To.Y;
+            return move.From.Y > move.To.Y;
+        }
+
+        bool IsEatingBackward(Move move)
+        {
+            return move.IsEating && !move.IsEatingForward;
         }
         public Piece GetPiece(Point pos)
         {
@@ -370,9 +406,15 @@ namespace Checkers
             {
                 var piece = new Piece();
                 if (i < 12)
+                {
                     piece.Display = "X";
+                    piece.Player = Board.PlayerX;
+                }
                 else
+                {
                     piece.Display = "O";
+                    piece.Player = Board.PlayerO;
+                }
                 Pieces.Add(piece);
             }
             SetPieces();
@@ -491,5 +533,21 @@ namespace Checkers
 
         }
 
+    }
+
+
+    class Move
+    {
+        public Piece Piece { get; set; }
+        public Point From { get; set; }
+        public Point To { get; set; }
+        public bool IsEatingForward { get; set; }
+        public bool IsEatingBackward { get; set; }
+        public bool IsTurningIntoKing { get; set; }
+        public bool IsLegal { get; set; }
+        //public bool CanMoveAgain { get; set; }
+
+
+        public bool IsEating { get; set; }
     }
 }

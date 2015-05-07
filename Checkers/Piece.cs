@@ -15,6 +15,7 @@ namespace Checkers
         public Point Position { get; set; }
         public bool IsKing { get; set; }
         public string Display { get; set; }
+        public Player Player { get; set; }
 
     }
 }

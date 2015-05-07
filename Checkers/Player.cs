@@ -11,7 +11,11 @@ namespace Checkers
         public string Name { get; set; }
         public bool IsTurn { get; set; }
         public string Display { get; set; }
-        public bool IsEating { get; set; }
+        /// <summary>
+        /// Returns +1 for player1, and -1 for player2
+        /// </summary>
+        public int YDirection { get; set; }
+        public bool IsPlayerX { get; set; }
 
     }
 }

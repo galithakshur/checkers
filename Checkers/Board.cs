@@ -11,8 +11,8 @@ namespace Checkers
         public Board()
         {
             Pieces = new List<Piece>();
-            PlayerX = new Player();
-            PlayerO = new Player();
+            PlayerX = new Player { Display = "X", IsPlayerX = true, YDirection = +1 };
+            PlayerO = new Player { Display = "O", IsPlayerX = false, YDirection = -1 };
         }
         public List<Piece> Pieces { get; set; }
 
