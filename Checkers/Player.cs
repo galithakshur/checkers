@@ -17,5 +17,7 @@ namespace Checkers
         public int YDirection { get; set; }
         public bool IsPlayerX { get; set; }
 
+
+        public string KingDisplay { get; set; }
     }
 }

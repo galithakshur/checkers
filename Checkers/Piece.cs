@@ -17,5 +17,7 @@ namespace Checkers
         public string Display { get; set; }
         public Player Player { get; set; }
 
+
+        public string KingDisplay { get; set; }
     }
 }

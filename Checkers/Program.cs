@@ -39,6 +39,8 @@ namespace Checkers
         //    MovePiece(Board.Pieces[4], new Point(1, 3));
         //    CurrentPlayer = Board.PlayerO;
         //}
+        
+
 
     }
 
