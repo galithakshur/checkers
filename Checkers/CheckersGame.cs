@@ -31,7 +31,7 @@ namespace Checkers
             Pieces.ForEach(piece => DrawCell(piece.Position));
             RegisterPlayers();
             MoveSelector(new Point(0, 0));
-            MakeAKing();
+            //MakeAKing();
             //PlayReverseEating();
             while (true)  // there are pieces on board
             {
@@ -63,7 +63,7 @@ namespace Checkers
         }
         private void MakeAKing()
         {
-            MakeMove(CreateMove(Board.Pieces[8],new Point(1, 3)));
+            MakeMove(CreateMove(Board.Pieces[8], new Point(1, 3)));
             MakeMove(CreateMove(Board.Pieces[12], new Point(2, 4)));
             MakeMove(CreateMove(Board.Pieces[9], new Point(3, 3)));
             MakeMove(CreateMove(Board.Pieces[12], new Point(0, 2)));
@@ -106,11 +106,9 @@ namespace Checkers
                 var piece = GetPiece(SelectorPosition);
                 if (piece == null)
                     return;
-               // var display = piece.IsKing ? CurrentPlayer.KingDisplay:CurrentPlayer.Display ;
-               //if (piece.Display != display)//|| piece.Display != 
-                if ((piece.IsKing && piece.KingDisplay != CurrentPlayer.KingDisplay) || piece.Display != CurrentPlayer.Display)
+                if (piece.Player != CurrentPlayer)
                 {
-                    Error();
+                    BlinkUserError();
                     return;
                 }
                 SelectedPiece = piece;
@@ -125,17 +123,15 @@ namespace Checkers
                     SelectedPiece = null;
                     DrawCell(SelectorPosition);
                 }
-                // is still necesary? since move.isLeagle = true.... 
-                else if (CheckLegalMoveAndErrorIfNeeded(move))
+                else if (!move.IsLegal)
                 {
-                    SelectedPiece = null;
-                    MakeMove(move);
-                    // change turn to other player (on Board/here.CurrentPlayer)?
-                    ChangeTurn();
+                    BlinkUserError();
                 }
                 else
                 {
-                    Error();
+                    SelectedPiece = null;
+                    MakeMove(move);
+                    ChangeTurn();
                 }
             }
         }
@@ -176,7 +172,7 @@ namespace Checkers
             Console.WriteLine("{0} - your turn", CurrentPlayer.Name);
             LastMove = null;
         }
-        private void Error()
+        private void BlinkUserError()
         {
             var display = string.Empty;
             var point = new Point(ConvertCursorToX(Console.CursorLeft), ConvertCursorToY(Console.CursorTop));
@@ -185,8 +181,9 @@ namespace Checkers
                 display = " ";
             else
                 display = piece.Display;
+
             Draw(display, Convert(SelectorPosition), ConsoleColor.Red);
-            Thread.Sleep(500);
+            Thread.Sleep(300);
             Draw(display, Convert(SelectorPosition), ConsoleColor.Green);
         }
         Point SelectorPosition;
@@ -205,18 +202,13 @@ namespace Checkers
                 DrawCell(prevPos);
             DrawCell(SelectorPosition);
         }
-        public void Select()
-        {
-
-
-        }
 
 
         public bool IsTurningIntoKing(Move move)
         {
             var piece = move.Piece;
             var newPos = move.To;
-            if ((piece.Display == "x" && newPos.Y == 7) || (piece.Display == "o" && newPos.Y == 0))
+            if ((piece.Player.IsPlayerX && newPos.Y == 7) || (!piece.Player.IsPlayerX && newPos.Y == 0))
                 return true;
             return false;
 
@@ -225,16 +217,11 @@ namespace Checkers
         {
             var piece = move.Piece;
             var newPos = move.To;
-            var kingBorderX = 0;
-            var kingBorderY = 7; 
-            // again is it necessary? move.isleagle = true                    
-            if (!CheckLegalMoveAndErrorIfNeeded(CreateMove(piece, newPos)))
+            // again is it necessary? move.islegal = true                    
+            if (!move.IsLegal)
                 throw new Exception("Illegal Move");
-            if ((piece.Display == "x" && newPos.Y == kingBorderY) || (piece.Display == "o" && newPos.Y == kingBorderX))
-            {
+            if (move.IsTurningIntoKing)
                 piece.IsKing = true;
-                piece.KingDisplay = piece.Display == "x" ? "X" :"O";
-            }
             if (move.IsEatingForward || move.IsEatingBackward) // or: if(move.IsEating) 
             {
                 var midPiece = GetMidPiece(piece, newPos);
@@ -289,24 +276,17 @@ namespace Checkers
         {
             return GetPiece(pos) != null;
         }
-        public bool CheckLegalMoveAndErrorIfNeeded(Move move)
-        {
-            var legal = move.IsLegal;
-            if (!legal)
-                Error();
-            return legal;
-        }
         bool IsLegal(Move move)
         {
             var piece = move.Piece;
             var newPos = move.To;
             var px = piece.Position.X;
             var py = piece.Position.Y;
-            //
-            if (newPos.X< 0 || newPos.Y < 0)
+            if (newPos.X < 0 || newPos.Y < 0)
                 return false;
-            if (IsCellOccupied(newPos))
-                return false;
+            if (newPos.Y > 7 || newPos.X > 7)
+                if (IsCellOccupied(newPos))
+                    return false;
             if (move.IsEatingForward)
                 return true;
             if (move.IsEatingBackward)
@@ -317,7 +297,7 @@ namespace Checkers
                     return true;
                 return false;
             }
-            var legalY = piece.Display == "x" ? py + 1 : py - 1;
+            var legalY = piece.Player.YDirection;//.Display == "x" ? py + 1 : py - 1;
             // go forward left or forward right, or eat
             //
             if ((px - 1 == newPos.X || px + 1 == newPos.X) && (legalY == newPos.Y || piece.IsKing))
@@ -331,7 +311,7 @@ namespace Checkers
             int y = piece.Position.Y;
             //var yDir = piece.Player.YDirection;
 
-            
+
             var possiblePositions = new List<Point>
             {
                 new Point(x+1, y+1),
@@ -349,10 +329,9 @@ namespace Checkers
             var moves = new List<Move>();
             foreach (var p in possiblePositions)
             {
-                //won't it be easier to check move.IsLeagle?
-                if(CreateMove(piece,p).IsLegal)
-               // if (!IsCellOccupied(p))
-                    moves.Add(CreateMove(piece, p));
+                var move = CreateMove(piece, p);
+                if (move.IsLegal)
+                    moves.Add(move);
             }
             return moves;
         }
@@ -368,7 +347,7 @@ namespace Checkers
             if ((px - 2 == newPos.X || px + 2 == newPos.X) && (py + 2 == newPos.Y || py - 2 == newPos.Y))
             {
                 var midPiece = GetMidPiece(piece, newPos);
-                if (midPiece != null && midPiece.Display != piece.Display)
+                if (midPiece != null && midPiece.Player != piece.Player)
                     return true;
             }
             return false;
@@ -402,15 +381,9 @@ namespace Checkers
             {
                 var piece = new Piece();
                 if (i < 12)
-                {
-                    piece.Display = "x";
                     piece.Player = Board.PlayerX;
-                }
                 else
-                {
-                    piece.Display = "o";
                     piece.Player = Board.PlayerO;
-                }
                 Pieces.Add(piece);
             }
             SetPieces();
@@ -501,14 +474,14 @@ namespace Checkers
             var piece = GetPiece(pos);
             if (piece != null)
             {
-            var display = piece.IsKing ? piece.KingDisplay : piece.Display;
-            Draw(display, Convert(piece.Position), bgColor);
+                var display = piece.IsKing ? piece.Player.KingDisplay : piece.Player.Display;
+                Draw(display, Convert(piece.Position), bgColor);
             }
             else
             {
                 Draw(" ", Convert(pos), bgColor);
             }
-                
+
 
         }
         public void DrawCell2(Point pos, bool isKing)
