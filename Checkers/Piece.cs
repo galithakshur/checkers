@@ -18,7 +18,7 @@ namespace Checkers
         {
             get
             {
-                return IsKing ? Player.KingDisplay : Display;
+                return IsKing ? Player.KingDisplay : Player.Display;
             }
         }
         public Player Player { get; set; }

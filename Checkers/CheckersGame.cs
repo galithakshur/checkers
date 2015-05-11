@@ -299,8 +299,8 @@ namespace Checkers
             }
             var legalY = piece.Player.YDirection;//.Display == "x" ? py + 1 : py - 1;
             // go forward left or forward right, or eat
-            //
-            if ((px - 1 == newPos.X || px + 1 == newPos.X) && (legalY == newPos.Y || piece.IsKing))
+            // adding iscelloccupied
+            if ((px - 1 == newPos.X || px + 1 == newPos.X) && (py +legalY == newPos.Y || piece.IsKing) && !IsCellOccupied(newPos))
                 return true;
             return false;
         }
@@ -355,7 +355,16 @@ namespace Checkers
 
         public bool IsEatingForward(Move move)
         {
+            // after an eat, the player.isEatig = true and here it just checks if the direction is correct  
+            // but really it doesn't check the mid piece  or if cell occupied... 
+            var midPiece = GetMidPiece(move.Piece, move.To);
             if (!move.IsEating)
+                return false;
+            //
+            if (IsCellOccupied(move.To))
+                return false;
+            //
+            if (midPiece == null || midPiece.Player==CurrentPlayer)
                 return false;
             if (move.Piece.Player.YDirection == 1)
                 return move.From.Y < move.To.Y;
@@ -364,6 +373,13 @@ namespace Checkers
 
         bool IsEatingBackward(Move move)
         {
+            // iseating means that there was an eat last move not that there is a potential eating
+            if (IsCellOccupied(move.To))
+                return false;
+            var midPiece = GetMidPiece(move.Piece, move.To);
+            if (midPiece == null || midPiece.Player == CurrentPlayer)
+                return false;
+
             return move.IsEating && !move.IsEatingForward;
         }
         public Piece GetPiece(Point pos)
