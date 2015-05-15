@@ -19,9 +19,13 @@ namespace Tetris
         {
             return p.X == X && p.Y == Y;
         }
-       public Point MoveBy(int dx, int dy)
+        public Point MoveBy(int dx, int dy)
         {
             return new Point(X + dx, Y + dy);
+        }
+        public Point MoveBy(Point offsetPoint)
+        {
+            return MoveBy(offsetPoint.X, offsetPoint.Y);
         }
 
     }

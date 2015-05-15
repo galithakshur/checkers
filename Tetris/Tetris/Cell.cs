@@ -18,9 +18,22 @@ namespace Tetris
         {
             return c.Color == Color && c.Location == Location;
         }
-        public ConsoleColor Color;
-        public Point Location;
-        public Shape Shape;
+        public ConsoleColor Color { get; set; }
+        public Point Location { get; set; }
+        /// <summary>
+        /// Returns the current shape if it's occupied by the current shape
+        /// </summary>
+        public Shape Shape { get; set; }
+
+        public bool IsOccupied
+        {
+            get { return Color != ConsoleColor.Black; }
+        }
+
+        public bool IsOccupiedByCurrentShape
+        {
+            get { return Shape != null; }
+        }
     }
 }
 
