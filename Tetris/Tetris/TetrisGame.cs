@@ -10,11 +10,24 @@ namespace Tetris
     {
         public TetrisGame()
         {
-            Board = new Dictionary<string, Cell>();
+            SizeX = 50;
+            SizeY = 20;
+            Board = new Cell[SizeX, SizeY];
             Shapes = new Shapes();
         }
 
+        public Cell[,] Board;
+       // public Dictionary<string, Cell> Board;
+        public Shapes Shapes;
+        public Shape CurrentShape { get; set; }
+        public Point CurrentShapePos { get; set; }
+        public List<Point> CurrentShapeLayout { get; set; }
+        //make imutable
+        public int SizeX { get; set; }
+        public int SizeY { get; set; }
 
+
+        
         public void Start()
         {
             CreateBoard();
@@ -51,12 +64,9 @@ namespace Tetris
                 }
             }
         }
-        public Dictionary<string, Cell> Board;
-        public Shapes Shapes;
         public void CreateBoard()
         {
-            SizeX = 50;
-            SizeY = 20;
+            
             ConsoleColor color = ConsoleColor.Black;
             for (var i = 0; i < SizeX; i++)
             {
@@ -64,15 +74,15 @@ namespace Tetris
                 {
                     var point = new Point(i, j);
                     var cell = new Cell(color, point);
-                    Board.Add(i + "_" + j, cell);
+                    Board[i, j] = cell;
                 }
             }
         }
         public void DrawBoard()
         {
-            foreach (var pair in Board)
+            foreach (var c in Board)
             {
-                Draw(" ", pair.Value.Location, pair.Value.Color);
+                Draw(" ", c.Location, c.Color); // c.value.Location -> c.location
             }
         }
         public void AddShape(Shape shape)
@@ -134,7 +144,7 @@ namespace Tetris
             if (p.X < 0 || p.Y < 0)
                 return null;
 
-            var cell = Board[p.X + "_" + p.Y];
+            var cell = Board[p.X ,p.Y];
             return cell;
         }
         public void MoveShapeBy(int x, int y)
@@ -166,14 +176,6 @@ namespace Tetris
             CurrentShapeLayout = layout;
             DrawCurrentShape();
         }
-        public Shape CurrentShape { get; set; }
-        
-        public Point CurrentShapePos { get; set; }
-        public List<Point> CurrentShapeLayout { get; set; }
-
-        int SizeX;
-        int SizeY;
-
         public bool IsCurrentShapeOnFloor()
         {
             //can I draw the currrent shape layout one line below where it is now?
