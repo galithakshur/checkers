@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Tetris
 {
     class TetrisGame
-    {                                   
+    {
         public TetrisGame()
         {
             SizeX = 50;
@@ -33,13 +33,8 @@ namespace Tetris
         public void Start()
         {
             CreateBoard();
-            var shapes = new Shapes();
-            var shape = shapes.AllShapes[0];
-            shape.Color = ConsoleColor.Magenta;
-            AddShape(shape, shape.Layouts[1]);
-            //
             DrawBoard2();
-            CurrentShape = shape;
+            AddRandomShapeAndLayout();
             while (true)
             {
                 ConsoleKeyInfo keyInfo = Console.ReadKey(true);
@@ -57,15 +52,15 @@ namespace Tetris
                     //clear current shape from cells
                     var cells = CurrentShapeLayout.Select(p => GetCell(p.MoveBy(CurrentShapePos))).ToList();
                     cells.ForEach(cell => cell.Shape = null);
-                    AddRandomShapeAndLayout(shapes, shape);
+                    AddRandomShapeAndLayout();
                 }
             }
         }
 
-        private void AddRandomShapeAndLayout(Tetris.Shapes shapes, Shape shape)
+        private void AddRandomShapeAndLayout()
         {
-            var randomNumber = Random1.Next(0, shapes.AllShapes.Count);
-            shape = shapes.AllShapes[randomNumber];
+            var randomNumber = Random1.Next(0, Shapes.AllShapes.Count);
+            var shape = Shapes.AllShapes[randomNumber];
             var randomNumber2 = Random2.Next(0, shape.Layouts.Count);
             var layout = (shape.Layouts[randomNumber2]);
             AddShape(shape, layout);
@@ -93,20 +88,20 @@ namespace Tetris
         //}
         public void DrawBoard2()
         {
-            var s = String.Empty ;
+            var s = String.Empty;
             foreach (var c in Board)
             {
                 s = " ";
-                if (c.Location.X == SizeX-1 )
-                    s = " |";
+                if (c.Location.X == SizeX - 1)
+                    s = "  |";
                 if (c.Location.Y == SizeY - 1)
                     s = "_";
                 if (c.Location.X == 0)
                     s = "| ";
-                 if (c.Location.Y == SizeY - 1 && c.Location.X == 0)
-                     s = "|_";
+                if (c.Location.Y == SizeY - 1 && c.Location.X == 0)
+                    s = "|_";
                 if (c.Location.Y == SizeY - 1 && c.Location.X == SizeX - 1)
-                   s = "_|";
+                    s = " _|";
                 Draw(s, c.Location, c.Color); // c.value.Location -> c.location
             }
         }
@@ -247,115 +242,6 @@ namespace Tetris
         }
     }
 }
-//bool CanDraw(List<Point> layout, Point pos)
-//{
-//    if (IsAtEdges(layout, pos) || IsOnLeftEdge(layout, pos))
-//        return false;
-//    return true;
-//}
-//bool IsAtEdges(List<Point> shapeLayout, Point location) //SizeX,SizeY
-//{
-//    foreach (var p in shapeLayout)
-//    {
-//        var p2 = p.MoveBy(location.X, location.Y);
-//        if (p2.X >= SizeX || p2.Y >= SizeY)
-//            return false;
-//    }
-//    return true;
-//}
-//bool IsOnFloor(List<Point> shapeLayout, Point location)
-//{
-//    foreach (var p in shapeLayout)
-//    {
-//        var p2 = p.MoveBy(location.X, location.Y);
-//        // add condition to hitting another shape
-//        if (p2.Y >= SizeY)
-//            return false;
-//    }
-//    return true;
-//}
-//bool IsOnLeftEdge(List<Point> shapeLayout, Point location)
-//{
-//    foreach (var p in shapeLayout)
-//    {
-//        var p2 = p.MoveBy(location.X, location.Y);
-//        if (p2.X < 0)
-//            return false;
-//    }
-//    return true;
-//}
-
-//if (CurrentShapePos.X > SizeX)
-//    CurrentShapePos = new Point(SizeX, CurrentShapePos.Y);
-//if (CurrentShapePos.Y > SizeY)
-//    CurrentShapePos = new Point(CurrentShapePos.X, SizeY);
-
-//bool IsOnRightEdge(List<Point> shapeLayout, Point location)
-//{
-//    foreach (var p in shapeLayout)
-//    {
-//        var p2 = p.MoveBy(location.X, location.Y);
-//        if (p2.X >= SizeX)
-//            return false;
-//    }
-//    return true;
-//}   
-
-
-
-//}
-//DrawBoard();
-
-//var index = -2;
-//var shape = new Shape();
-//foreach (var sh in Shapes.AllShapes)
-//{
-//    if (CurrentShape.Color == sh.Color)
-//        shape = sh;
-//}
-//if (shape != null)
-//    foreach (var s in shape.Layouts)
-//    {
-//        // not correct 
-//        if (s.Equals(CurrentShape))
-//        {
-//            //create this shape (currentShape) according to shapes[shape] 
-//            //and then search for the current and return the next 1
-//            index = shape.Layouts.IndexOf(s);
-//            var newShape = shape.Layouts[index + 1];
-//            break;
-//        }
-//    }
-////delete from console current shape draw new shape
-//public void MoveShape(Shape shape, int x, int y)
-//{
-//    var newLayout = new List<Point>();
-//    foreach (var p in shape.Layout)
-//    {
-//        newLayout.Add(p.MoveBy(x, y));
-//    }
-//    shape.Layout = newLayout;
-//    Console.Clear();
-//    DrawShape(shape);
-//}
-
-//complete moveshape
-// make a pointer from cell -> shape
-//foreach (var p in shape.Layout)
-//{
-//    Board[p.X + "_" + p.Y].Color = ConsoleColor.Black;
-//}
-//var newLayout = new List<Point>();
-//foreach (var p in shape.Layout)
-//{
-//    var newPos = p.MoveBy(x, y);
-//    newLayout.Add(newPos);
-//    var cell = new Cell(shape.Color, newPos);
-//    Board[newPos.X + "_" + newPos.Y] = cell;
-//}
-//shape.Layout = newLayout;
-//Console.Clear();
-//DrawBoard();
 
 
 
