@@ -10,7 +10,7 @@ namespace Tetris
     {
         public TetrisGame()
         {
-            SizeX = 50;
+            SizeX = 20;
             SizeY = 20;
             Board = new Cell[SizeX, SizeY];
             Shapes = new Shapes();
@@ -34,6 +34,7 @@ namespace Tetris
         {
             CreateBoard();
             DrawBoard2();
+            DrawBorders();
             AddRandomShapeAndLayout();
             while (true)
             {
@@ -79,41 +80,52 @@ namespace Tetris
                 }
             }
         }
-        //void DrawBorders()
-        //{
-        //    Draw(" |", sizeX, 0 - sizeY);
-        //    Draw("_", sizeY, 0 - sizeX);
-        //    Draw("| ", 0, 0 - sizeY);
+        void DrawBorders()
+        {
+            for (var i = 0; i <= SizeX+1; i++)
+            {
+                for (var j = 0; j <= SizeY; j++)
+                {
+                    var color = ConsoleColor.Black;
+                    //char s = ' ';
+                    if (i == SizeX + 1)
+                        color = ConsoleColor.Gray;
+                        //s = '|';
+                    if (j == SizeY)
+                        color = ConsoleColor.Gray;
+                    // s = '-';
+                    if (i == 0)
+                        color = ConsoleColor.Gray;
+                    //s = '|';
+                    //if (j == SizeY  && i== 0)
+                    //    s = "|_";
+                    //if (j == SizeY && i == SizeX)
+                    //    s = '|';
+                    Draw(' ', new Point(i, j), color);
+                }
+            }
+            //Draw(" |", sizeX, 0 - sizeY);
+            //Draw("_", sizeY, 0 - sizeX);
+            //Draw("| ", 0, 0 - sizeY);
 
-        //}
+        }
         public void DrawBoard2()
         {
-            var s = String.Empty;
+            var s = ' ';
             foreach (var c in Board)
             {
-                s = " ";
-                if (c.Location.X == SizeX - 1)
-                    s = "  |";
-                if (c.Location.Y == SizeY - 1)
-                    s = "_";
-                if (c.Location.X == 0)
-                    s = "| ";
-                if (c.Location.Y == SizeY - 1 && c.Location.X == 0)
-                    s = "|_";
-                if (c.Location.Y == SizeY - 1 && c.Location.X == SizeX - 1)
-                    s = " _|";
-                Draw(s, c.Location, c.Color); // c.value.Location -> c.location
+                Draw(s, c.Location, c.Color);
             }
         }
-        void DrawOnBoard(string s, Point pos, ConsoleColor bgColor)
+        void DrawOnBoard(char s, Point pos, ConsoleColor bgColor)
         {
-            Draw(s, pos.MoveBy(1, 1), bgColor);
+            Draw(s, pos.MoveBy(1, 0), bgColor);
         }
         public void DrawBoard()
         {
             foreach (var c in Board)
             {
-                Draw(" ", c.Location, c.Color); // c.value.Location -> c.location
+                Draw(' ', c.Location, c.Color); // c.value.Location -> c.location
             }
         }
         public void AddShape(Shape shape, List<Point> layout)
@@ -121,7 +133,8 @@ namespace Tetris
             CurrentShape = shape;
             CurrentShapeLayout = layout;
             ///?
-            CurrentShapePos = new Point(25, 0);
+            CurrentShapeLayout.ForEach(p => Board[p.X, p.Y].Shape = shape);
+            CurrentShapePos = new Point(SizeX / 2, 0);
             DrawCurrentShape();
         }
         // draw shape at a specific Position
@@ -144,7 +157,7 @@ namespace Tetris
                     cell.Shape = null;
                 else
                     cell.Shape = shape;
-                DrawOnBoard(" ", p2, color);
+                DrawOnBoard(' ', p2, color);
             }
         }
         bool CanDrawOnBoard(List<Point> layout, Point pos)
@@ -189,6 +202,9 @@ namespace Tetris
         }
         void DrawCurrentShape()
         {
+            // incase shape at border and can't rotate
+            // if (CurrentShapePos.X == SizeX)
+            //     CurrentShapePos.MoveBy(-2, 0);
             DrawShape(CurrentShape, CurrentShapeLayout, CurrentShapePos, CurrentShape.Color);
         }
         void UndrawCurrentShape()
@@ -222,11 +238,11 @@ namespace Tetris
         {
             foreach (var p in shape.Layout)
             {
-                DrawOnBoard(" ", p, shape.Color);
+                DrawOnBoard(' ', p, shape.Color);
             }
         }
         Point LastCursorPos;
-        public void Draw(string s, Point pos, ConsoleColor bgColor)
+        public void Draw(char ch, Point pos, ConsoleColor bgColor)
         {
             if (LastCursorPos == null || !LastCursorPos.Equals(pos))
             {
@@ -236,7 +252,7 @@ namespace Tetris
             var prevColor = Console.BackgroundColor;
             if (prevColor != bgColor)
                 Console.BackgroundColor = bgColor;
-            Console.Write(s);
+            Console.Write(ch);
             if (prevColor != bgColor)
                 Console.BackgroundColor = prevColor;
         }
