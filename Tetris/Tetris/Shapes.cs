@@ -12,6 +12,13 @@ namespace Tetris
         public Shapes()
         {
             AllShapes = CreateShapes();
+            AllShapes[0].Color = ConsoleColor.Blue;
+            AllShapes[1].Color = ConsoleColor.Cyan;
+            AllShapes[2].Color = ConsoleColor.Green;
+            AllShapes[3].Color = ConsoleColor.Magenta;
+            AllShapes[4].Color = ConsoleColor.Red;
+            AllShapes[5].Color = ConsoleColor.Yellow;
+            AllShapes[6].Color = ConsoleColor.DarkGreen;
         }
         // need to change param to string [][][]/AllShapes? and add a loop
         List<Point> CreateLayout(string[] def)

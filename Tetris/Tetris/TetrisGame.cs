@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tetris
@@ -16,6 +17,7 @@ namespace Tetris
             Shapes = new Shapes();
             Random1 = new Random();
             Random2 = new Random();
+            IsGameOn = true;
         }
 
         public Cell[,] Board { get; set; }
@@ -28,34 +30,139 @@ namespace Tetris
         public int SizeY { get; set; }
         public Random Random1 { get; set; }
         public Random Random2 { get; set; }
+        public bool IsGameOn { get; set; }
 
 
         public void Start()
         {
             CreateBoard();
-            DrawBoard2();
+            DrawBoard();
             DrawBorders();
             AddRandomShapeAndLayout();
-            while (true)
+            var lastApplyGravity = DateTime.Now;
+            while (IsGameOn)
             {
-                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-                if (keyInfo.Key == ConsoleKey.UpArrow)
-                    RotateCurrentShape();
-                else if (keyInfo.Key == ConsoleKey.DownArrow)
-                    MoveShapeBy(0, 1);
-                else if (keyInfo.Key == ConsoleKey.RightArrow)
-                    MoveShapeBy(1, 0);
-                else if (keyInfo.Key == ConsoleKey.LeftArrow)
-                    MoveShapeBy(-1, 0);
-
-                if (IsCurrentShapeOnFloor())
+                Thread.Sleep(10);
+                if (Console.KeyAvailable)
                 {
-                    //clear current shape from cells
-                    var cells = CurrentShapeLayout.Select(p => GetCell(p.MoveBy(CurrentShapePos))).ToList();
-                    cells.ForEach(cell => cell.Shape = null);
-                    AddRandomShapeAndLayout();
+                    ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                    if (keyInfo.Key == ConsoleKey.UpArrow)
+                        RotateCurrentShape();
+                    else if (keyInfo.Key == ConsoleKey.DownArrow)
+                        ApplyGravity();
+                    else if (keyInfo.Key == ConsoleKey.RightArrow)
+                        MoveShapeBy(1, 0);
+                    else if (keyInfo.Key == ConsoleKey.LeftArrow)
+                        MoveShapeBy(-1, 0);
+                }
+                if (DateTime.Now - lastApplyGravity >= TimeSpan.FromSeconds(1))
+                {
+                    ApplyGravity();
+                    lastApplyGravity = DateTime.Now;
                 }
             }
+        }
+        void ApplyGravity()
+        {
+            if (IsCurrentShapeOnFloor())
+            {
+                if (CurrentShapePos.Y == 0)
+                    GameOver();
+                //
+                DeleteFullRows();
+                //clear current shape from cells
+                var cells = CurrentShapeLayout.Select(p => GetCell(p.MoveBy(CurrentShapePos))).ToList();
+                cells.ForEach(cell => cell.Shape = null);
+                AddRandomShapeAndLayout();
+            }
+            else
+            {
+                MoveShapeBy(0, 1);
+            }
+        }
+
+        List<int> GetFullRows()
+        {
+            var fullRows = new List<int>();
+            var IsRowFull = true;
+            for (var j = SizeY - 1; j > 0; j--)
+            {
+                for (var i = 1; i < SizeX; i++)
+                {
+                    //if (Board[i, j].Shape == null && !Board[i, j].IsOccupied)
+                    if (Board[i, j].Color == ConsoleColor.Black || Board[i, j].Color == ConsoleColor.Gray)
+                    {
+                        IsRowFull = false;
+                        break;
+                    }
+                }
+                if (IsRowFull)
+                    fullRows.Add(j);
+            }
+            return fullRows;
+        }
+        List<Cell> GetRowCells(int rowY)
+        {
+            var cells = new List<Cell>();
+            //i is not 0 cause 0 is border
+            for (var i = 1; i < SizeX; i++)
+            {
+                cells.Add(Board[i, rowY]);
+            }
+            return cells;
+        }
+        private void DeleteFullRows()
+        {
+            var rows = GetFullRows();
+            if (rows.Count <= 0)
+                return;
+            //foreach (var row in rows)
+            //{
+            //    var cells = GetRowCells(row);
+            //    cells.ForEach(cell => cell.Color = ConsoleColor.Black);
+            //    // cells.ForEach(DrawCell());
+            //
+            //}
+            var untilLine = rows[0] - 1;
+            for (var i = 0; i < rows.Count; i++)
+            {
+                if (rows.Count > 1 && untilLine >= rows[rows.Count-1])
+                    untilLine = rows[i + 1];
+                for (var j = rows[i]; j > untilLine; j--)
+                {   
+                    ApplyEmptyRowGravity(j);
+                }
+            }
+            DrawBoard();
+            DrawBorders();
+        }
+
+        void ApplyEmptyRowGravity(int rowIndex)
+        {
+            //TODO: move all rows *** above ***  this row one line lower and render them.
+            var row = GetRowCells(rowIndex);
+            var rowAbove = GetRowCells(rowIndex - 1);
+            var i = 0;
+            foreach (var cellAbove in rowAbove)
+            {
+                var cell = row[i];
+                cell.Color = cellAbove.Color;
+                i++;
+            }
+
+        }
+
+        void GameOver()
+        {
+            Console.SetCursorPosition(10, 10);
+            Console.WriteLine("Game Over");
+            Thread.Sleep(10);
+            IsGameOn = false;
+        }
+
+        void MyKeyHandlerFunction(char key)
+        {
+
         }
 
         private void AddRandomShapeAndLayout()
@@ -82,51 +189,32 @@ namespace Tetris
         }
         void DrawBorders()
         {
-            for (var i = 0; i <= SizeX+1; i++)
+            for (var i = 0; i <= SizeX + 1; i++)
             {
                 for (var j = 0; j <= SizeY; j++)
                 {
                     var color = ConsoleColor.Black;
-                    //char s = ' ';
                     if (i == SizeX + 1)
                         color = ConsoleColor.Gray;
-                        //s = '|';
                     if (j == SizeY)
                         color = ConsoleColor.Gray;
-                    // s = '-';
                     if (i == 0)
                         color = ConsoleColor.Gray;
-                    //s = '|';
-                    //if (j == SizeY  && i== 0)
-                    //    s = "|_";
-                    //if (j == SizeY && i == SizeX)
-                    //    s = '|';
                     Draw(' ', new Point(i, j), color);
                 }
             }
-            //Draw(" |", sizeX, 0 - sizeY);
-            //Draw("_", sizeY, 0 - sizeX);
-            //Draw("| ", 0, 0 - sizeY);
-
         }
-        public void DrawBoard2()
+        public void DrawBoard()
         {
-            var s = ' ';
+            //var s = ' ';
             foreach (var c in Board)
             {
-                Draw(s, c.Location, c.Color);
+                Draw(' ', c.Location, c.Color);
             }
         }
         void DrawOnBoard(char s, Point pos, ConsoleColor bgColor)
         {
             Draw(s, pos.MoveBy(1, 0), bgColor);
-        }
-        public void DrawBoard()
-        {
-            foreach (var c in Board)
-            {
-                Draw(' ', c.Location, c.Color); // c.value.Location -> c.location
-            }
         }
         public void AddShape(Shape shape, List<Point> layout)
         {
@@ -241,14 +329,9 @@ namespace Tetris
                 DrawOnBoard(' ', p, shape.Color);
             }
         }
-        Point LastCursorPos;
         public void Draw(char ch, Point pos, ConsoleColor bgColor)
         {
-            if (LastCursorPos == null || !LastCursorPos.Equals(pos))
-            {
-                Console.SetCursorPosition(pos.X, pos.Y);
-                LastCursorPos = pos.MoveBy(1, 0);
-            }
+            Console.SetCursorPosition(pos.X, pos.Y);
             var prevColor = Console.BackgroundColor;
             if (prevColor != bgColor)
                 Console.BackgroundColor = bgColor;
@@ -260,4 +343,17 @@ namespace Tetris
 }
 
 
+//for (var j = line; j >= 0; j--)
+//{
+//    for (var i = 0; i < SizeX; i++)
+//    {
+//        //Board[i, j].Shape = null;
+//        //Board[line, j].Color = ConsoleColor.Black;
+//        Board[i, j - 1].Location.MoveBy(0, 1);
+//        Board[i, j] = Board[i, j-1];
+//        //Board[i, j].Location = Board[i, j - 1].Location.MoveBy(0, 1);
+//    }
+//}
+
+                    //var cells = GetRowCells(j);
 
