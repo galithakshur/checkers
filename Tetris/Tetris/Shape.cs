@@ -10,23 +10,19 @@ namespace Tetris
     {
         public Shape()
         {
-            Layouts = new List<List<Point>>();
-        }
-        public bool Equals(Shape shape)
-        {
-            return shape.Layout == Layout && shape.Color==Color;
+            Layouts = new List<ShapeLayout>();
         }
 
-        public List<Point> Layout
-        {
-            get
-            {
-                return Layouts.FirstOrDefault();
-            }
-        }
-       public List<List<Point>> Layouts { get; set; }
+       public List<ShapeLayout> Layouts { get; set; }
        public ConsoleColor Color;
 
+
+    }
+
+    class ShapeLayout
+    {
+        public Shape Shape { get; set; }
+        public List<Point> Layout { get; set; }
 
     }
 

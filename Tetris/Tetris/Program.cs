@@ -20,7 +20,7 @@ namespace Tetris
         {
             foreach (var sh in tetris.Shapes.AllShapes)
             {
-                tetris.DrawShape(sh);
+                //tetris.DrawShape(sh);
                 Thread.Sleep(500);
                 Console.Clear();
 

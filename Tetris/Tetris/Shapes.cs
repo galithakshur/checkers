@@ -21,7 +21,7 @@ namespace Tetris
             AllShapes[6].Color = ConsoleColor.DarkGreen;
         }
         // need to change param to string [][][]/AllShapes? and add a loop
-        List<Point> CreateLayout(string[] def)
+        ShapeLayout CreateLayout(string[] def)
         {
             var layout = new List<Point>();
             var y = 0;
@@ -36,7 +36,7 @@ namespace Tetris
                 }
                 y++;
             }
-            return layout;
+            return new ShapeLayout { Layout = layout };
         }
 
         List<Shape> CreateShapes()
@@ -205,7 +205,9 @@ namespace Tetris
                     },
                 },
             };
-            return shapes.Select(shapeDef => new Shape { Layouts = shapeDef.Select(CreateLayout).ToList(),Color = ConsoleColor.Blue }).ToList();
+            var shapes2 = shapes.Select(shapeDef => new Shape { Layouts = shapeDef.Select(CreateLayout).ToList(),Color = ConsoleColor.Blue }).ToList();
+            shapes2.ForEach(shape => shape.Layouts.ForEach(layout => layout.Shape = shape));
+            return shapes2;
         }
     }
 
