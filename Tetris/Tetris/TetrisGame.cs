@@ -11,7 +11,7 @@ namespace Tetris
     {
         public TetrisGame()
         {
-            SizeX = 20;
+            SizeX = 10;
             SizeY = 20;
             Board = new Cell[SizeX, SizeY];
             Shapes = new Shapes();
@@ -25,7 +25,6 @@ namespace Tetris
         public Shape CurrentShape { get; set; }
         public Point CurrentShapePos { get; set; }
         public List<Point> CurrentShapeLayout { get; set; }
-        //make imutable
         public int SizeX { get; set; }
         public int SizeY { get; set; }
         public Random Random1 { get; set; }
@@ -36,7 +35,6 @@ namespace Tetris
         public void Start()
         {
             CreateBoard();
-            DrawBoard();
             DrawBorders();
             AddRandomShapeAndLayout();
             var lastApplyGravity = DateTime.Now;
@@ -61,6 +59,33 @@ namespace Tetris
                     lastApplyGravity = DateTime.Now;
                 }
             }
+        }
+
+        private void TestFullRows()
+        {
+            Board[0, 19].Color = ConsoleColor.Green;
+            Board[1, 19].Color = ConsoleColor.DarkRed;
+            Board[2, 19].Color = ConsoleColor.DarkRed;
+            Board[3, 19].Color = ConsoleColor.DarkRed;
+            Board[4, 19].Color = ConsoleColor.DarkRed;
+            Board[5, 19].Color = ConsoleColor.DarkRed;
+            Board[6, 19].Color = ConsoleColor.DarkRed;
+            Board[7, 19].Color = ConsoleColor.DarkRed;
+            Board[8, 19].Color = ConsoleColor.DarkRed;
+            Board[9, 19].Color = ConsoleColor.DarkGreen;
+            Board[0, 18].Color = ConsoleColor.Green;
+            Board[1, 18].Color = ConsoleColor.DarkRed;
+            Board[2, 18].Color = ConsoleColor.DarkRed;
+            Board[3, 18].Color = ConsoleColor.DarkRed;
+            //Board[4, 18].Color = ConsoleColor.DarkRed;
+            //Board[5, 18].Color = ConsoleColor.DarkRed;
+            Board[6, 18].Color = ConsoleColor.DarkRed;
+            Board[7, 18].Color = ConsoleColor.DarkRed;
+            Board[8, 18].Color = ConsoleColor.DarkRed;
+            Board[9, 18].Color = ConsoleColor.DarkGreen;
+            DrawBoard();
+            DeleteFullRows();
+            Console.ReadLine();
         }
         void ApplyGravity()
         {
@@ -104,8 +129,7 @@ namespace Tetris
         List<Cell> GetRowCells(int rowY)
         {
             var cells = new List<Cell>();
-            //i is not 0 cause 0 is border
-            for (var i = 1; i < SizeX; i++)
+            for (var i = 0; i < SizeX; i++)
             {
                 cells.Add(Board[i, rowY]);
             }
@@ -116,28 +140,41 @@ namespace Tetris
             var rows = GetFullRows();
             if (rows.Count <= 0)
                 return;
-            //foreach (var row in rows)
-            //{
-            //    var cells = GetRowCells(row);
-            //    cells.ForEach(cell => cell.Color = ConsoleColor.Black);
-            //    // cells.ForEach(DrawCell());
-            //
-            //}
-            var untilLine = rows[0] - 1;
-            for (var i = 0; i < rows.Count; i++)
+            foreach (var row in rows)
             {
-                if (rows.Count > 1 && untilLine >= rows[rows.Count-1])
-                    untilLine = rows[i + 1];
-                for (var j = rows[i]; j > untilLine; j--)
-                {   
-                    ApplyEmptyRowGravity(j);
-                }
+                var cells = GetRowCells(row);
+                cells.ForEach(cell => cell.Color = ConsoleColor.Black);
+                // cells.ForEach(DrawCell());
+
             }
+            rows.ForEach(ApplyGravityOnRow);
+
             DrawBoard();
-            DrawBorders();
+
+            // should be above the for loop: 
+            //var untilLine = rows[0] - 1;
+            // should be inside the first for loop
+            //if (untilLine == rows[rows.Count - 1])
+            //{
+            //    untilLine = rows[rows.Count - 1] - 1;
+            //}
+            //else
+            //{
+            //    if (rows.Count > 1)
+            //        untilLine = rows[i + 1];
+            //}
+
         }
 
-        void ApplyEmptyRowGravity(int rowIndex)
+        private void ApplyGravityOnRow(int row)
+        {
+            for (var j = row; j > 0; j--)  //j > untilLine
+            {
+                CopyRowAbove(j);
+            }
+        }
+
+        void CopyRowAbove(int rowIndex)
         {
             //TODO: move all rows *** above ***  this row one line lower and render them.
             var row = GetRowCells(rowIndex);
@@ -209,7 +246,7 @@ namespace Tetris
             //var s = ' ';
             foreach (var c in Board)
             {
-                Draw(' ', c.Location, c.Color);
+                DrawOnBoard(' ', c.Location, c.Color);
             }
         }
         void DrawOnBoard(char s, Point pos, ConsoleColor bgColor)
@@ -355,5 +392,5 @@ namespace Tetris
 //    }
 //}
 
-                    //var cells = GetRowCells(j);
+//var cells = GetRowCells(j);
 
