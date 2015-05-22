@@ -11,7 +11,7 @@ namespace Tetris
     {
         public TetrisGame()
         {
-            SizeX = 20;
+            SizeX = 10;
             SizeY = 20;
             Board = new Cell[SizeX, SizeY];
             Shapes = new Shapes();
@@ -61,6 +61,7 @@ namespace Tetris
             DrawBorders();
             DrawScoreBoard();
             AddRandomShapeAndLayout();
+            NextShapeBoard();
             var lastApplyGravity = DateTime.Now;
             while (IsGameOn)
             {
@@ -133,23 +134,12 @@ namespace Tetris
         List<int> GetFullRows()
         {
             var fullRows = new List<int>();
-            var IsRowFull = true;
             for (var j = 0; j < SizeY; j++)
             {
-                for (var i = 0; i < SizeX; i++)
-                {
-                    //if (Board[i, j].Shape == null && !Board[i, j].IsOccupied)
-                    if (Board[i, j].Color == ConsoleColor.Black)//|| Board[i, j].Color == ConsoleColor.Gray)
-                    {
-                        IsRowFull = false;
-                        break;
-                    }
-                }
-                if (IsRowFull)
+                var row = GetRowCells(j);
+                var isRowFull = row.All(t => t.IsOccupied);
+                if (isRowFull)
                     fullRows.Add(j);
-                else
-                    IsRowFull = true;
-
             }
             return fullRows;
         }
@@ -209,19 +199,24 @@ namespace Tetris
             IsGameOn = false;
         }
 
-        void MyKeyHandlerFunction(char key)
+        private void AddRandomShapeAndLayout()
         {
-
+            if (NextLayout == null)         //this will only happen when the game starts
+                NextLayout = GetRandomShapeLayout();
+            CurrentShapeLayout = NextLayout;
+            NextLayout = GetRandomShapeLayout();
+            NextShapeBoard();
+            AddCurrentShape();
         }
 
-        private void AddRandomShapeAndLayout()
+
+        private ShapeLayout GetRandomShapeLayout()
         {
             var randomNumber = Random1.Next(0, Shapes.AllShapes.Count);
             var shape = Shapes.AllShapes[randomNumber];
             var randomNumber2 = Random2.Next(0, shape.Layouts.Count);
             var layout = shape.Layouts[randomNumber2];
-            AddShape(layout);
-            // return shape;
+            return layout;
         }
         public void CreateBoard()
         {
@@ -303,6 +298,7 @@ namespace Tetris
              };
             DrawStringArray(NextShapeBoard, 30, 3);
 
+
             DrawShape(NextLayout, NextShapePos, NextShape.Color);
         }
 
@@ -310,20 +306,15 @@ namespace Tetris
         {
             Draw(s, pos.MoveBy(1, 0), bgColor);
         }
-        public void AddShape(ShapeLayout layout)
+        public void AddCurrentShape()
         {
-            CurrentShapeLayout = layout;
-            ///?
-            CurrentShapeLayout.Layout.ForEach(p => Board[p.X, p.Y].Shape = layout.Shape);
+            CurrentShapeLayout.Layout.ForEach(p => Board[p.X, p.Y].Shape = CurrentShapeLayout.Shape);
             CurrentShapePos = new Point(SizeX / 2, 0);
             DrawCurrentShape();
         }
         // draw shape at a specific Position
-        void DrawShape(ShapeLayout layout, Point pos, ConsoleColor color)
+        void DrawShapeOnBoard(ShapeLayout layout, Point pos, ConsoleColor color)
         {
-            CurrentShapeLayout = layout;
-            CurrentShapePos = pos;
-
             //if (color != ConsoleColor.Black && !CanDrawOnBoard(layout, pos))
             //    return;
 
@@ -337,6 +328,19 @@ namespace Tetris
                     cell.Shape = null;
                 else
                     cell.Shape = layout.Shape;
+            }
+            DrawShape(layout, pos, color);
+
+        }
+        void DrawShape(ShapeLayout layout, Point pos, ConsoleColor color)
+        {
+            //if (color != ConsoleColor.Black && !CanDrawOnBoard(layout, pos))
+            //    return;
+
+            //looping again On all layout - can draw does it too 
+            foreach (var p in layout.Layout)
+            {
+                var p2 = p.MoveBy(pos.X, pos.Y);
                 DrawOnBoard(' ', p2, color);
             }
         }
@@ -385,11 +389,11 @@ namespace Tetris
             // incase shape at border and can't rotate
             // if (CurrentShapePos.X == SizeX)
             //     CurrentShapePos.MoveBy(-2, 0);
-            DrawShape(CurrentShapeLayout, CurrentShapePos, CurrentShape.Color);
+            DrawShapeOnBoard(CurrentShapeLayout, CurrentShapePos, CurrentShape.Color);
         }
         void UndrawCurrentShape()
         {
-            DrawShape(CurrentShapeLayout, CurrentShapePos, ConsoleColor.Black);
+            DrawShapeOnBoard(CurrentShapeLayout, CurrentShapePos, ConsoleColor.Black);
         }
 
         int FindLayoutIndex(ShapeLayout layout)
@@ -415,10 +419,7 @@ namespace Tetris
             //can I draw the currrent shape layout one line below where it is now?
             return !CanDrawOnBoard(CurrentShapeLayout.Layout, CurrentShapePos.MoveBy(0, 1));
         }
-        void MoveCurrentShapeDown()
-        {
 
-        }
         public void Draw(char ch, Point pos, ConsoleColor bgColor)
         {
             Console.SetCursorPosition(pos.X, pos.Y);
