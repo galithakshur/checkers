@@ -10,7 +10,7 @@ namespace Tron
     {
         public readonly int X;
         public readonly int Y;
-        public Point OppositePoint { get; set; }
+
         public Point(int x, int y)
         {
             X = x;
@@ -30,4 +30,32 @@ namespace Tron
         }
     }
 
+    // inherit from Point - less changes
+    class Direction : Point
+    {
+        public Direction(int x, int y)
+            : base(x, y)
+        {
+
+        }
+        public Direction()
+            : base(0, 0)
+        {
+
+        }
+
+        Point _OppositeDirection;
+        public Point OppositeDirection
+        {
+            get
+            {
+                if (_OppositeDirection == null)
+                    _OppositeDirection = new Direction(X * -1, Y * -1);
+                return _OppositeDirection;
+            }
+        }
+    }
 }
+
+
+

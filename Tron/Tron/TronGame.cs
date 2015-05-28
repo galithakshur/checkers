@@ -13,17 +13,17 @@ namespace Tron
         {
             SizeX = 30;
             SizeY = 20;
-            Left = new Point(-1, 0);
-            Right = new Point(1, 0);
-            Left.OppositePoint = Right;
-            Right.OppositePoint = Left;
-            Up = new Point(0, -1);
-            Down = new Point(0, 1);
-            Up.OppositePoint = Down;
-            Down.OppositePoint = Up;
+            Left = new Direction(-1, 0);
+            Right = new Direction(1, 0);
+            //Left.OppositeDirection = Right;
+            //Right.OppositeDirection = Left;
+            Up = new Direction(0, -1);
+            Down = new Direction(0, 1);
+            //Up.OppositeDirection = Down;
+            //Down.OppositeDirection = Up;
             Board = new Cell[SizeX, SizeY];
             Random = new Random();
-            Directions = new List<Point> { Left, Right, Up, Down };
+            Directions = new List<Direction> { Left, Right, Up, Down };
             Player1 = new Player(StartingPointPlayer1, Left, ConsoleColor.Magenta);
             Player2 = new Player(StartingPointPlayer2, Right, ConsoleColor.Green);
             StartingPointPlayer1 = new Point((SizeX / 3) * 2, SizeY / 2);
@@ -39,11 +39,11 @@ namespace Tron
         public bool IsGameOn { get; set; }
         public Point StartingPointPlayer1 { get; set; }
         public Point StartingPointPlayer2 { get; set; }
-        public Point Left { get; set; }
-        public Point Right { get; set; }
-        public Point Up { get; set; }
-        public Point Down { get; set; }
-        public List<Point> Directions { get; set; }
+        public Direction Left { get; set; }
+        public Direction Right { get; set; }
+        public Direction Up { get; set; }
+        public Direction Down { get; set; }
+        public List<Direction> Directions { get; set; }
         public Random Random { get; set; }
         // public int Strikes { get; set; }
 
@@ -66,6 +66,8 @@ namespace Tron
             if (begine.Key == ConsoleKey.Spacebar)  // while?
                 IsGameOn = true;
             DeleteTextAt(new Point(0, SizeY + 2), ConsoleColor.Black);
+            //For test
+            Player2.IsComputer = true;
             while (IsGameOn)
             {
                 Thread.Sleep(10);
@@ -73,17 +75,17 @@ namespace Tron
                 {
                     ConsoleKeyInfo keyInfo = Console.ReadKey(true);
                     if (keyInfo.Key == ConsoleKey.UpArrow)
-                        //HandelDirection(Player1,Up);
-                        Player1.Direction = Up;
+                        HandleDirection(Player1, Up);
+                    //Player1.Direction = Up;
                     else if (keyInfo.Key == ConsoleKey.DownArrow)
-                        //HandelDirection(Player1,Down);
-                        Player1.Direction = Down;
+                        HandleDirection(Player1, Down);
+                    //Player1.Direction = Down;
                     else if (keyInfo.Key == ConsoleKey.RightArrow)
-                        //HandelDirection(Player1,Right);
-                        Player1.Direction = Right;
+                        HandleDirection(Player1, Right);
+                    //Player1.Direction = Right;
                     else if (keyInfo.Key == ConsoleKey.LeftArrow)
-                        //HandelDirection(Player1,Left);
-                        Player1.Direction = Left;
+                        HandleDirection(Player1, Left);
+                    //Player1.Direction = Left;
                     //else if (keyInfo.Key == ConsoleKey.Enter)
                     //   player1 Turbo();
 
@@ -106,37 +108,35 @@ namespace Tron
                     }
                     else
                     {
-                        ComputerMove(Player2);
+                        //ComputerMove(Player2);
                     }
-                    Move(Player1);
+                    //Move(Player1);
                     //Move(Player2);
                     //ComputerMove(Player1); 
                 }
                 if (!IsGameOn)
                     break;
-                if (DateTime.Now - lastMove >= TimeSpan.FromSeconds(1))
+                if (DateTime.Now - lastMove >= TimeSpan.FromMilliseconds(100))
                 {
                     Move(Player1);
-                    //ComputerMove(Player1);
-                    //Move(Player2);
-                    ComputerMove(Player2);
+                    Move(Player2);
                     lastMove = DateTime.Now;
                 }
             }
         }
 
 
-        void HandelDirection(Player player, Point newDirection)
+        void HandleDirection(Player player, Direction newDirection)
         {
-            player.PreviuosDirection = player.Direction;
-            if (!OppositeDirection(player, newDirection))
-                player.Direction = newDirection;
-            //else
-            // make it so that it will "read another direction
+            if (IsOppositeDirection(player, newDirection))
+                return;
+
+            player.PreviousDirection = player.Direction;
+            player.Direction = newDirection;
         }
-        bool OppositeDirection(Player player, Point direction)
+        bool IsOppositeDirection(Player player, Point newDirection)
         {
-            if (direction == player.PreviuosDirection.OppositePoint)
+            if (newDirection.Equals(player.Direction.OppositeDirection))
                 return true;
             return false;
         }
@@ -175,60 +175,68 @@ namespace Tron
                 py++;
             }
         }
-        void ComputerMove(Player player)
+
+
+
+        Player GetOpposite(Player player)
         {
-            if (!CanComputerMove(player))
-            {
-                if (player.Color == Player1.Color)
-                {
-                    Player2.Wins++;
-                    OposingPlayer = Player2;
-                }
-                else
-                {
-                    Player1.Wins++;
-                    OposingPlayer = Player1;
-                }
-                if (OposingPlayer.Wins == 3)
-                    GameOver();   // make the game stop completely
-                else
-                    Start();
-            }
-            else
-            {
-                player.Head = player.Head.MoveBy(player.Direction);
-                GetCell(player.Head).Color = player.Color;
-                DrawBoard();
-            }
+            if (player.Color == Player1.Color)
+                return Player2;
+            return Player1;
         }
-        private bool CanComputerMove(Player player)
+
+
+        private void Move(Player player)
         {
-            //var canComputerMove = false;
-            foreach (var direction in Directions)
+            var dir = player.Direction;
+            if (player.IsComputer)
+                dir = GetNextRandomDirection(player);
+
+            if (dir == null)
             {
-                player.Direction = direction;
-                var newPos = player.Head.MoveBy(player.Direction);
-                // had a problem with if (!HasReachedABorder(newPos) || !GetCell(newPos).IsOccupied)
-                // because if  !HasReachedABorder(newPos) then i'm at (-1,0) and   GetCell() will result in nullrefferanceexception
-                if (HasReachedABorder(newPos) || GetCell(newPos).IsOccupied)
-                    continue;
-                else
-                    return true;
+                LoseGame(player);
+                return;
             }
-            return false;
+
+            player.Direction = dir;
+            player.Head = player.Head.MoveBy(player.Direction);
+            var cell = Board[player.Head.X, player.Head.Y];
+            cell.Color = player.Color;
+            DrawCell(cell);
         }
-        private bool CanMove(Player player)
+
+
+        Direction GetNextRandomDirection(Player player)
         {
-            var newPos = player.Head.MoveBy(player.Direction);
+            var possibleDirs = Directions.Where(dir => CanMove(player, dir)).ToList();
+            if (possibleDirs.Count == 0)
+                return null;
+            if (possibleDirs.Contains(player.Direction))
+                possibleDirs.Add(player.Direction);
+            var index = Random.Next(0, possibleDirs.Count);
+            return possibleDirs[index];
+        }
+
+        private bool CanMove(Player player, Direction dir)
+        {
+            var newPos = player.Head.MoveBy(dir);
             if (HasReachedABorder(newPos) || GetCell(newPos).IsOccupied)
                 return false;
             return true;
         }
-        private Point PickRandomDirection()
+
+
+
+        void LoseGame(Player player)
         {
-            var index = Random.Next(0, Directions.Count);
-            return Directions[index];
+            var opponent = GetOpposite(player);
+            opponent.Wins++;
+            if (opponent.Wins == 3)
+                GameOver(); // make the game stop completely
+            else
+                Start();
         }
+
         void DeleteTextAt(Point p, ConsoleColor color)
         {
             var p2 = p;
@@ -265,33 +273,6 @@ namespace Tron
         private void Turbo()
         {
             // for the  next x seconds make "speed" faster
-        }
-        private void Move(Player player)
-        {
-
-            if (!CanMove(player))
-            {
-                if (player.Color == Player1.Color)
-                {
-                    Player2.Wins++;
-                    OposingPlayer = Player2;
-                }
-                else
-                {
-                    Player1.Wins++;
-                    OposingPlayer = Player1;
-                }
-                if (OposingPlayer.Wins == 3)
-                    GameOver(); // make the game stop completely
-                else
-                    Start();
-            }
-            else
-            {
-                player.Head = player.Head.MoveBy(player.Direction);
-                Board[player.Head.X, player.Head.Y].Color = player.Color;
-                DrawBoard();
-            }
         }
         void GameOver()
         {
@@ -361,8 +342,13 @@ namespace Tron
         {
             foreach (var c in Board)
             {
-                DrawOnBoard(' ', c.Location, c.Color);
+                DrawCell(c);
             }
+        }
+
+        private void DrawCell(Cell c)
+        {
+            DrawOnBoard(' ', c.Location, c.Color);
         }
         void DrawOnBoard(char s, Point pos, ConsoleColor bgColor)
         {
