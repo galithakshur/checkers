@@ -17,6 +17,9 @@ namespace Tron
         public ConsoleColor Color { get; set; }
         public Point Head { get; set; } //cell
         public Point Direction { get; set; } //int/string/PointOffset(0,1/0,-1/1,0/-1,0)/Enum
+        public Point PreviuosDirection { get; set; }
+        public int Wins { get; set; }
+        public bool IsComputer { get; set; }
         //Point/Cell Tail ?{ get; set; }
     }
 }

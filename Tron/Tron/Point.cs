@@ -10,6 +10,7 @@ namespace Tron
     {
         public readonly int X;
         public readonly int Y;
+        public Point OppositePoint { get; set; }
         public Point(int x, int y)
         {
             X = x;
