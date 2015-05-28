@@ -67,7 +67,7 @@ namespace Tron
                 IsGameOn = true;
             DeleteTextAt(new Point(0, SizeY + 2), ConsoleColor.Black);
             //For test
-            Player2.IsComputer = true;
+            //Player2.IsComputer = true;
             while (IsGameOn)
             {
                 Thread.Sleep(10);
@@ -76,43 +76,28 @@ namespace Tron
                     ConsoleKeyInfo keyInfo = Console.ReadKey(true);
                     if (keyInfo.Key == ConsoleKey.UpArrow)
                         HandleDirection(Player1, Up);
-                    //Player1.Direction = Up;
                     else if (keyInfo.Key == ConsoleKey.DownArrow)
                         HandleDirection(Player1, Down);
-                    //Player1.Direction = Down;
                     else if (keyInfo.Key == ConsoleKey.RightArrow)
                         HandleDirection(Player1, Right);
-                    //Player1.Direction = Right;
                     else if (keyInfo.Key == ConsoleKey.LeftArrow)
                         HandleDirection(Player1, Left);
-                    //Player1.Direction = Left;
                     //else if (keyInfo.Key == ConsoleKey.Enter)
                     //   player1 Turbo();
 
                     if (!Player2.IsComputer)
                     {
                         if (keyInfo.Key == ConsoleKey.W)
-                            //HandelDirection(Player2,Up);
-                            Player2.Direction = Up;
+                            HandleDirection(Player2,Up);
                         else if (keyInfo.Key == ConsoleKey.S)
-                            //HandelDirection(Player2,Down);
-                            Player2.Direction = Down;
+                            HandleDirection(Player2,Down);
                         else if (keyInfo.Key == ConsoleKey.D)
-                            //HandelDirection(Player2, Right);
-                            Player2.Direction = Right;
+                            HandleDirection(Player2, Right);
                         else if (keyInfo.Key == ConsoleKey.A)
-                            //HandelDirection(Player2,Left);
-                            Player2.Direction = Left;
+                            HandleDirection(Player2,Left);
                         //else if (keyInfo.Key == ConsoleKey.Enter)
                         //  Player2  Turbo();
                     }
-                    else
-                    {
-                        //ComputerMove(Player2);
-                    }
-                    //Move(Player1);
-                    //Move(Player2);
-                    //ComputerMove(Player1); 
                 }
                 if (!IsGameOn)
                     break;
@@ -188,9 +173,17 @@ namespace Tron
 
         private void Move(Player player)
         {
-            var dir = player.Direction;
+            Direction dir;
             if (player.IsComputer)
+            {
                 dir = GetNextRandomDirection(player);
+            }
+            else
+            {
+                dir = player.Direction;
+                if (!CanMove(player, dir))
+                    dir = null;
+            }
 
             if (dir == null)
             {
